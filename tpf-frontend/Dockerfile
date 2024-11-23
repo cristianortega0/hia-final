@@ -10,17 +10,17 @@ COPY package*.json ./
 # Instalar dependencias
 RUN npm install
 
-# Copiar los archivos de la aplicación Angular
+# Copiar todos los archivos del proyecto Angular
 COPY . .
 
-# Ejecutar el build para producción
+# Construir la aplicación Angular para producción
 RUN npm run build --prod
 
 # Etapa 2: Servir la aplicación con Nginx
 FROM nginx:alpine
 
-# Verificar si nginx está disponible
-RUN nginx -v || echo "Nginx no encontrado" && apk add --no-cache nginx
+# Asegurarse de que nginx está instalado y verificar la versión (para debug)
+RUN nginx -v || (echo "Nginx no encontrado, instalando..."; apk add --no-cache nginx)
 
 # Crear el directorio donde se alojarán los archivos estáticos si no existe
 RUN mkdir -p /usr/share/nginx/html
