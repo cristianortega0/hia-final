@@ -4,11 +4,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'tpf-frontend/**' # Cambios en frontend
+      - 'tpf-backend/**'  # Cambios en backend
 
 jobs:
   build-frontend:
     name: Build and Deploy Frontend
     runs-on: ubuntu-latest
+    if: contains(github.event.commits.*.modified, 'tpf-frontend/') || contains(github.event.head_commit.message, 'frontend')
 
     steps:
     # 1. Checkout del repositorio
@@ -38,6 +42,7 @@ jobs:
   build-backend:
     name: Build and Deploy Backend
     runs-on: ubuntu-latest
+    if: contains(github.event.commits.*.modified, 'tpf-backend/') || contains(github.event.head_commit.message, 'backend')
 
     steps:
     # 1. Checkout del repositorio
@@ -57,6 +62,11 @@ jobs:
       run: |
         docker build -t cristian241/backend-app:${{ github.sha }} .
         docker tag cristian241/backend-app:${{ github.sha }} cristian241/backend-app:latest
+
+    # 4. Subir imagen del backend a Docker Hub
+      run: |
+        docker push cristian241/backend-app:${{ github.sha }}
+        docker push cristian241/backend-app:latestst
 
     # 4. Subir imagen del backend a Docker Hub
     - name: Push Backend Docker Image
