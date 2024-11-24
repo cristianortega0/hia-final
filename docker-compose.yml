@@ -1,0 +1,153 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: cristian241/frontend-app:latest  # Imagen en Docker Hub
+    ports:
+      - "4200:80"  # Mapea el puerto 4200
+    networks:
+      - my-network
+
+  backend:
+    image: cristian241/backend-app:latest  # Imagen en Docker Hub
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=tpf_db_d
+    depends_on:
+      - mysql
+    networks:
+      - my-network
+    ports:
+      - "3000:3000"
+    
+  mysql:
+    image: mysql:latest  # Imagen oficial de MySQL
+    environment:
+      MYSQL_ROOT_PASSWORD: root  # Contraseña del root      
+      MYSQL_DATABASE: tpf_db_d  # Nombre de la base de datos
+    volumes:
+      - mysql-data:/var/lib/mysql  # Volumen persistente para los datos
+      - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql  # Montar el archivo SQL para restaurar
+    networks:
+      - my-network
+    ports:
+      - "3307:3306"  # Exponer el puerto 3306 para conexiones externas
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest  # Imagen oficial de phpMyAdmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: mysql  # Nombre del servicio MySQL definido arriba
+      PMA_PORT: 3306   # Puerto del servicio MySQL
+      MYSQL_ROOT_PASSWORD: root  # Contraseña del root
+    depends_on:
+      - mysql
+    networks:
+      - my-network
+    ports:
+      - "8080:80"  # Puerto para acceder a phpMyAdmin desde el navegador
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+
+  backup:
+    image: mysql:latest  # Usa la misma imagen de MySQL
+    container_name: mysql-backup
+    volumes:
+      - mysql-backups:/backups  # Volumen Docker para almacenar backups 
+      - ./backup.sh:/usr/local/bin/backup.sh  # Monta el script en la ruta correcta    
+    depends_on:
+      - mysql
+    entrypoint: ["/bin/bash", "-c", "chmod +x /usr/local/bin/backup.sh && while true; do /usr/local/bin/backup.sh; sleep 84600; done"]
+    networks:
+      - my-network
+
+  restore:
+    image: mysql:latest
+    container_name: mysql-restore
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./backup.sql:/backup.sql
+    command: bash -c "sleep 55 && mysql -h mysql -u root -proot tpf_db_d < /backup.sql && echo 'Restauración completada'"
+    networks:
+      - my-network
+    depends_on:
+      - mysql
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+    command: --interval 200  # Configurar el intervalo a 200 segundos 
+    networks:
+      - my-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml  # Configuración de Prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"  # Puerto de Prometheus
+    networks:
+      - my-network
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8081:8080"  # Puerto de cAdvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - my-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"  # Puerto de Grafana
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - my-network
+    restart: unless-stopped
+
+  mysql-exporter:
+    image: bitnami/mysqld-exporter
+    container_name: mysql-exporter
+    networks:
+      - my-network       
+    command: 
+     - --config.my-cnf=/cfg/.my.cnf
+     - --mysqld.address=mysql:3306
+    volumes:
+      - "./.my.cnf:/cfg/.my.cnf"
+    environment:
+      - DATA_SOURCE_NAME=root:root@tcp(mysql:3306)/"
+    ports:
+      - 9104:9104
+
+networks:
+  my-network:
+
+volumes:
+  mysql-data:
+  mysql-backups:  # Volumen específico para backups
+  grafana-data:
