@@ -16,8 +16,6 @@ COPY . .
 # Construir la aplicación Angular (esto generará los archivos en dist/)
 RUN npm run build --prod
 
-
-
 # Usar la imagen oficial de Nginx
 FROM nginx:alpine
 
