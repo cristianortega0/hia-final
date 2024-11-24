@@ -61,7 +61,7 @@ const connectWithRetry = async () => {
 connectWithRetry()
   .then(() => {
     console.log('Conexión a la base de datos exitosa');
-    sequelize.sync({ force: true })
+    sequelize.sync({ })
       .then(() => {
         console.log("Tablas sincronizadas correctamente");
       })
