@@ -64,9 +64,10 @@ jobs:
         docker tag cristian241/backend-app:${{ github.sha }} cristian241/backend-app:latest
 
     # 4. Subir imagen del backend a Docker Hub
+    - name: Push Backend Docker Image
       run: |
         docker push cristian241/backend-app:${{ github.sha }}
-        docker push cristian241/backend-app:latestst
+        docker push cristian241/backend-app:latest
 
     # 4. Subir imagen del backend a Docker Hub
     - name: Push Backend Docker Image
