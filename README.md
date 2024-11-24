@@ -1,13 +1,12 @@
 PRACTICA INTEGRADORA HERRAMIENTAS INFORMATICAS AVANZADAS 2024
-INTEGRANTES: ORTEGA, CRISTIAN ALFREDO
-             VALERO, FERNANDO ALFREDO
-             VELAZCO, NICOLAS JONATAN EZEQUIEL
+INTEGRANTES: ORTEGA, CRISTIAN ALFREDO ---
+             VALERO, FERNANDO ALFREDO ---
+             VELAZCO, NICOLAS JONATAN EZEQUIEL --
 
 OBJETIVO: Este trabajo práctico integrador está diseñado para evaluar el manejo de herramientas avanzadas en la implementación, despliegue y mantenimiento de aplicaciones web.
 
 1. Selección de la aplicación web
-Tarea: Seleccionar una aplicación web previamente desarrollada (por ejemplo, un
-proyecto académico). Identificar el stack tecnológico utilizado:
+Tarea: Seleccionar una aplicación web previamente desarrollada (por ejemplo, un proyecto académico). Identificar el stack tecnológico utilizado:
  Backend: Node.js, Spring, Django, etc.
  Frontend: Angular, React, etc.
  Base de datos: PostgreSQL, MySQL, MongoDB, etc.
