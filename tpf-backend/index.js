@@ -5,7 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require("dotenv");
 const sequelize = require('./database'); // Importa sequelize desde tu archivo de configuración
-
+//const { connectWithRetry } = require('./database'); // Importa la función de conexión
 // Importar modelos
 const Usuario = require('./models_sql/Usuario');
 const Alquiler = require('./models_sql/Alquiler');
@@ -36,12 +36,32 @@ app.use(express.json());
 app.use(cors({ origin: 'http://localhost:4200' }));
 
 // Conexión a la base de datos
-sequelize.authenticate() // Verificamos la conexión a la base de datos
+// Función para conectar con reintentos
+// Definir connectWithRetry en el mismo archivo
+const connectWithRetry = async () => {
+  let retries = 1000;
+  while (retries) {
+    try {
+      await sequelize.authenticate();
+      console.log("Conexión a la base de datos exitosa.");
+      return sequelize;
+    } catch (err) {
+      console.error("Error conectando a la base de datos. Reintentando...", err);
+      retries -= 1;
+      if (retries === 0) {
+        console.error("No se pudo conectar a la base de datos. Abortando.");
+        process.exit(1);
+      }
+      await new Promise((res) => setTimeout(res, 5000));
+    }
+  }
+};
+
+// Usar connectWithRetry directamente
+connectWithRetry()
   .then(() => {
     console.log('Conexión a la base de datos exitosa');
-    
-    // Sincronización de las tablas después de la conexión exitosa
-    sequelize.sync({ force: true })  // Esto eliminará las tablas existentes y las volverá a crear
+    sequelize.sync({ force: true })
       .then(() => {
         console.log("Tablas sincronizadas correctamente");
       })
@@ -52,7 +72,6 @@ sequelize.authenticate() // Verificamos la conexión a la base de datos
   .catch((err) => {
     console.error('No se pudo conectar a la base de datos:', err);
   });
-
 // Aquí seguirían las rutas de tu aplicación y la configuración de la API
 app.use('/api/usuario', require('./routes/usuario.route.js'));
 app.use('/api/alquiler', require('./routes/alquiler.route.js'));
