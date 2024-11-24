@@ -21,11 +21,5 @@ ENV DB_PORT=3306
 # Exponer el puerto de la aplicación
 EXPOSE 3000
 
-# Copiar el script wait-for-it
-COPY wait-for-it.sh /wait-for-it.sh
-
-# Dar permisos de ejecución al script
-RUN chmod +x /wait-for-it.sh
-
-# Comando para esperar a que la base de datos esté lista y luego iniciar la aplicación
-CMD ["sh", "-c", "/wait-for-it.sh $DB_HOST:$DB_PORT -- npm start"]
+# Comando para iniciar la aplicación (sin esperar por la base de datos)
+CMD ["npm", "start"]
