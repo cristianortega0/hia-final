@@ -24,6 +24,7 @@ services:
     ports:
       - "3000:3000"
     
+    
   mysql:
     image: mysql:latest  # Imagen oficial de MySQL
     environment:

@@ -9,9 +9,25 @@ on:
       - 'tpf-backend/**'  # Cambios en backend
 
 jobs:
+  tests:
+    name: Run Backend Tests
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Instalar dependencias y ejecutar pruebas
+      - name: Install Dependencies and Run Tests
+        working-directory: ./tpf-backend
+        run: |
+          npm install
+          npm test
+
   build-frontend:
     name: Build and Deploy Frontend
     runs-on: ubuntu-latest
+    needs: tests
     if: contains(github.event.commits.*.modified, 'tpf-frontend/') || contains(github.event.head_commit.message, 'frontend')
 
     steps:
@@ -42,6 +58,7 @@ jobs:
   build-backend:
     name: Build and Deploy Backend
     runs-on: ubuntu-latest
+    needs: tests
     if: contains(github.event.commits.*.modified, 'tpf-backend/') || contains(github.event.head_commit.message, 'backend')
 
     steps:
