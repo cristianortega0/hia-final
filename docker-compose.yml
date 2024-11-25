@@ -13,41 +13,101 @@ services:
     environment:
       - NODE_ENV=production
       - DB_HOST=mysql
-      - DB_PORT=3306
+      - DB_PORT=3307
       - DB_USER=root
       - DB_PASSWORD=root
       - DB_NAME=tpf_db_d
     depends_on:
-      - mysql
+      - haproxy
     networks:
       - my-network
     ports:
       - "3000:3000"
-    
-  mysql:
-    image: mysql:latest  # Imagen oficial de MySQL
+  
+  # Nodo maestro
+  mysql-maestro:
+    image: mysql:8.0
+    container_name: mysql-maestro
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root  # Contraseña del root      
-      MYSQL_DATABASE: tpf_db_d  # Nombre de la base de datos
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tpf_db_d
+      MYSQL_REPLICATION_USER: root
+      MYSQL_REPLICATION_PASSWORD: root
     volumes:
-      - mysql-data:/var/lib/mysql  # Volumen persistente para los datos
-      - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql  # Montar el archivo SQL para restaurar
+      - maestro-dato:/var/lib/mysql
+    ports:
+      - "3310:3306"  # Exponer el puerto 3310
+    command: >
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --gtid_mode=ON
+      --enforce_gtid_consistency=TRUE
+      --master_info_repository=TABLE
+      --relay_log_info_repository=TABLE
+      --log_slave_updates=TRUE
+      --read_only=FALSE
     networks:
       - my-network
+  
+  # Nodo esclavo
+  mysql-esclavo:
+    image: mysql:8.0
+    container_name: mysql-esclavo
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: tpf_db_d  # Base de datos adaptada
+      MYSQL_REPLICATION_USER: root
+      MYSQL_REPLICATION_PASSWORD: root
+    volumes:
+      - esclavo-dato:/var/lib/mysql
+      - ./setup-replication.sh:/docker-entrypoint-initdb.d/setup-replication.sh
     ports:
-      - "3307:3306"  # Exponer el puerto 3306 para conexiones externas
-    labels:
-      com.centurylinklabs.watchtower.enable: "false"
+      - "3311:3306"  # Exponer el puerto 3311
+    command: >
+      --server-id=2
+      --log-bin=mysql-bin
+      --relay-log=relay-bin
+      --read-only=1
+      --binlog-format=ROW
+      --gtid_mode=ON
+      --enforce_gtid_consistency=TRUE
+      --master_info_repository=TABLE
+      --relay_log_info_repository=TABLE
+      --log_slave_updates=TRUE
+      --skip-host-cache
+      --skip-name-resolve
+    depends_on:
+      - mysql-maestro
+    networks:
+      - my-network
+  
+  haproxy:
+    image: haproxy:latest
+    container_name: mysql
+    restart: always
+    ports:
+      - '3307:3306'  # Acceder al HAProxy a través del puerto 3307
+      - '3308:3306'
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - mysql-maestro
+      - mysql-esclavo
+    networks:
+      - my-network
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest  # Imagen oficial de phpMyAdmin
     container_name: phpmyadmin
     environment:
-      PMA_HOST: mysql  # Nombre del servicio MySQL definido arriba
+      PMA_HOST: mysql-maestro  # Nombre del servicio MySQL definido arriba
       PMA_PORT: 3306   # Puerto del servicio MySQL
       MYSQL_ROOT_PASSWORD: root  # Contraseña del root
     depends_on:
-      - mysql
+      - mysql-maestro
     networks:
       - my-network
     ports:
@@ -62,7 +122,7 @@ services:
       - mysql-backups:/backups  # Volumen Docker para almacenar backups 
       - ./backup.sh:/usr/local/bin/backup.sh  # Monta el script en la ruta correcta    
     depends_on:
-      - mysql
+      - mysql-maestro
     entrypoint: ["/bin/bash", "-c", "chmod +x /usr/local/bin/backup.sh && while true; do /usr/local/bin/backup.sh; sleep 84600; done"]
     networks:
       - my-network
@@ -79,7 +139,7 @@ services:
     networks:
       - my-network
     depends_on:
-      - mysql
+      - mysql-maestro
 
   watchtower:
     image: containrrr/watchtower
@@ -151,3 +211,7 @@ volumes:
   mysql-data:
   mysql-backups:  # Volumen específico para backups
   grafana-data:
+  maestro-dato:
+    name: maestro-dato
+  esclavo-dato:
+    name: esclavo-dato
