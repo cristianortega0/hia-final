@@ -99,21 +99,21 @@ services:
     networks:
       - my-network
 
-  #phpmyadmin:
-    #image: phpmyadmin/phpmyadmin:latest  # Imagen oficial de phpMyAdmin
-    #container_name: phpmyadmin
-    #environment:
-      #PMA_HOST: mysql  # Nombre del servicio MySQL definido arriba
-      #PMA_PORT: 3306   # Puerto del servicio MySQL
-      #MYSQL_ROOT_PASSWORD: root  # Contraseña del root
-    #depends_on:
-      #- mysql
-    #networks:
-      #- my-network
-    #ports:
-      #- "8080:80"  # Puerto para acceder a phpMyAdmin desde el navegador
-    #labels:
-      #com.centurylinklabs.watchtower.enable: "false"
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest  # Imagen oficial de phpMyAdmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: mysql-maestro  # Nombre del servicio MySQL definido arriba
+      PMA_PORT: 3306   # Puerto del servicio MySQL
+      MYSQL_ROOT_PASSWORD: root  # Contraseña del root
+    depends_on:
+      - mysql-maestro
+    networks:
+      - my-network
+    ports:
+      - "8080:80"  # Puerto para acceder a phpMyAdmin desde el navegador
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
 
   backup:
     image: mysql:latest  # Usa la misma imagen de MySQL
