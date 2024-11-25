@@ -22,7 +22,6 @@ CHANGE REPLICATION SOURCE TO
 mysql -u root -proot -e "START SLAVE;"
 
 
-
 #mysql -u root -proot -h mysql-maestro -P 3306 -e "CHANGE MASTER TO MASTER_HOST='mysql-maestro', MASTER_PORT=3306, MASTER_USER='root', MASTER_PASSWORD='root', MASTER_AUTO_POSITION=1;"
 #mysql -u root -proot -h mysql-esclavo -P 3306 -e "START REPLICA;"
 
