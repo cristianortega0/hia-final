@@ -1,10 +1,10 @@
 # Usar una imagen de Node.js para construir la aplicación Angular
 FROM node:18 as build
 
-# Establecer el directorio de trabajo
+# Establecer el directorio de trabajo 
 WORKDIR /app
 
-# Copiar los archivos necesarios (package.json y package-lock.json)
+# Copiar los archivos necesarios (package.json, package-lock.json)
 COPY package*.json ./
 
 # Instalar las dependencias de Angular
